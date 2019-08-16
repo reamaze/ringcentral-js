@@ -398,6 +398,15 @@ Platform.prototype._refresh = function() {
 
         this.emit(this.events.beforeRefresh);
 
+        // XREF REAMAZE if access token is valid, don't bother refreshing
+        if (this._auth.accessTokenValid()) {
+          return new Promise(function(resolve, reject) {
+            console.log("Access token is valid, skipping refresh");
+            this.emit(this.events.refreshSuccess, {});
+            reject("Access token is valid");
+          }.bind(this));
+        }
+
         // Perform sanity checks
         if (!this._auth.refreshToken()) throw new Error('Refresh token is missing');
         if (!this._auth.refreshTokenValid()) throw new Error('Refresh token has expired');

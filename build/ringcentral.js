@@ -1797,8 +1797,8 @@ Platform.prototype.login = function(options) {
         }
 
         if (options.endpointId) body.endpoint_id = options.endpointId;
-        if (options.accessTokenTtl) body.accessTokenTtl = options.accessTokenTtl;
-        if (options.refreshTokenTtl) body.refreshTokenTtl = options.refreshTokenTtl;
+        if (options.accessTokenTtl) body.access_token_ttl = options.accessTokenTtl;
+        if (options.refreshTokenTtl) body.refresh_token_ttl = options.refreshTokenTtl;
 
         resolve(this._tokenRequest(Platform._tokenEndpoint, body));
 
@@ -1836,6 +1836,15 @@ Platform.prototype._refresh = function() {
     return this.delay(this._refreshDelayMs).then(function() {
 
         this.emit(this.events.beforeRefresh);
+
+        // XREF REAMAZE if access token is valid, don't bother refreshing
+        if (this._auth.accessTokenValid()) {
+          return new Promise(function(resolve, reject) {
+            console.log("Access token is valid, skipping refresh");
+            this.emit(this.events.refreshSuccess, {});
+            reject("Access token is valid");
+          }.bind(this));
+        }
 
         // Perform sanity checks
         if (!this._auth.refreshToken()) throw new Error('Refresh token is missing');
@@ -2008,7 +2017,7 @@ Platform.prototype.sendRequest = function(request, options) {
         }
 
         return this.delay(retryAfter).then(function() {
-            return this.sendRequest(request, options);
+            return this.sendRequest(this._client.createRequest(options), options);
         }.bind(this));
 
     }.bind(this));
@@ -2274,7 +2283,7 @@ module.exports = Auth;
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
-var version = ("3.2.0");
+var version = ("3.2.2");
 
 // This will become false during the Webpack build, so no traces of package.json will be there
 if (false) {
